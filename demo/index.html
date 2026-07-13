@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Receipt Analyzer - ML Demo</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <header>
+        <h1>Receipt Analyzer</h1>
+        <p class="subtitle">Powered by Machine Learning</p>
+      </header>
+
+      <!-- Upload Section -->
+      <div id="upload-section" class="section active">
+        <div class="upload-area" id="upload-area">
+          <svg
+            class="upload-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <p class="upload-text">Drop image here or click to upload</p>
+          <p class="upload-hint">Supports JPEG, PNG</p>
+          <input
+            type="file"
+            id="file-input"
+            accept="image/jpeg,image/png,image/jpg"
+            hidden
+          />
+        </div>
+      </div>
+
+      <!-- Validation Section -->
+      <div id="validation-section" class="section">
+        <div class="result-card">
+          <div class="image-preview">
+            <img id="preview-image" alt="Uploaded receipt" />
+          </div>
+
+          <div class="status-bar">
+            <div id="validation-status" class="status">
+              <div class="spinner"></div>
+              <span class="status-text">Analyzing image...</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="validation-progress"></div>
+            </div>
+          </div>
+
+          <div id="validation-result" class="result hidden">
+            <div class="badge" id="confidence-badge"></div>
+            <button id="extract-btn" class="btn-primary">
+              Extract Total Amount
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Extraction Section -->
+      <div id="extraction-section" class="section">
+        <div class="result-card">
+          <div class="image-preview">
+            <img id="result-image" alt="Receipt" />
+          </div>
+
+          <div class="status-bar">
+            <div id="extraction-status" class="status">
+              <div class="spinner"></div>
+              <span class="status-text">Extracting total...</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="extraction-progress"></div>
+            </div>
+          </div>
+
+          <div id="extraction-result" class="result hidden">
+            <div class="badge success" id="validation-badge"></div>
+            <div class="total-amount" id="total-display"></div>
+            <button id="reset-btn" class="btn-secondary">
+              Process Another
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "@tensorflow-models/mobilenet": "^2.1.1",
+    "@tensorflow/tfjs": "^4.22.0",
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "canvas": "2.11.2",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "fs-extra": "11.1.1",
+    "jpeg-js": "0.4.4",
+    "multer": "^2.1.1",
+    "pngjs": "^7.0.0",
+    "tesseract.js": "^7.0.0"
+  }
+}

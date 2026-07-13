@@ -1,0 +1,1182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>receipt.label — Ahmed Habib</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0e0e0f;
+        --surface: #17171a;
+        --border: #2a2a30;
+        --accent-total: #00e5a0;
+        --accent-date: #ff6b35;
+        --accent-total-dim: rgba(0, 229, 160, 0.12);
+        --accent-date-dim: rgba(255, 107, 53, 0.12);
+        --text: #f0f0f2;
+        --text-muted: #6b6b78;
+        --font-mono: "JetBrains Mono", monospace;
+        --font-display: "Syne", sans-serif;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font-mono);
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* ── Header ── */
+      header {
+        padding: 14px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: var(--surface);
+        flex-shrink: 0;
+      }
+
+      header h1 {
+        font-family: var(--font-display);
+        font-size: 18px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+      }
+
+      header h1 span {
+        color: var(--accent-total);
+      }
+
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .shortcuts {
+        font-size: 11px;
+        color: var(--text-muted);
+      }
+
+      .shortcuts kbd {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 3px;
+        padding: 1px 5px;
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--text-muted);
+      }
+
+      .counter {
+        font-size: 12px;
+        color: var(--text-muted);
+        background: var(--bg);
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid var(--border);
+      }
+
+      /* ── Layout ── */
+      .app {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      /* ── Canvas area ── */
+      .canvas-area {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        background: var(--surface);
+        flex-shrink: 0;
+      }
+
+      .tool-btn {
+        padding: 6px 16px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .tool-btn:hover {
+        border-color: #444;
+        color: var(--text);
+      }
+
+      .tool-btn.total.active {
+        background: var(--accent-total-dim);
+        border-color: var(--accent-total);
+        color: var(--accent-total);
+      }
+
+      .tool-btn.date.active {
+        background: var(--accent-date-dim);
+        border-color: var(--accent-date);
+        color: var(--accent-date);
+      }
+
+      .tool-btn.danger:hover {
+        border-color: #ff4466;
+        color: #ff4466;
+        background: rgba(255, 68, 102, 0.1);
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .dot.total {
+        background: var(--accent-total);
+      }
+      .dot.date {
+        background: var(--accent-date);
+      }
+
+      .toolbar-sep {
+        width: 1px;
+        height: 20px;
+        background: var(--border);
+        margin: 0 4px;
+      }
+
+      .canvas-wrapper {
+        flex: 1;
+        overflow: auto;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 24px;
+        position: relative;
+      }
+
+      #canvas {
+        display: none;
+        cursor: crosshair;
+        box-shadow:
+          0 0 0 1px var(--border),
+          0 8px 40px rgba(0, 0, 0, 0.6);
+      }
+
+      /* ── Drop zone ── */
+      .drop-zone {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .drop-zone.drag-over {
+        background: rgba(0, 229, 160, 0.04);
+      }
+
+      .drop-zone input {
+        display: none;
+      }
+
+      .drop-icon {
+        width: 72px;
+        height: 72px;
+        border: 2px dashed var(--border);
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: var(--text-muted);
+        transition: all 0.2s;
+      }
+
+      .drop-zone:hover .drop-icon,
+      .drop-zone.drag-over .drop-icon {
+        border-color: var(--accent-total);
+        color: var(--accent-total);
+        background: var(--accent-total-dim);
+      }
+
+      .drop-label {
+        font-family: var(--font-display);
+        font-size: 15px;
+        color: var(--text-muted);
+        text-align: center;
+        line-height: 1.6;
+      }
+
+      .drop-sub {
+        font-size: 11px;
+        color: #3a3a42;
+        display: block;
+        margin-top: 4px;
+      }
+
+      /* ── Sidebar ── */
+      .sidebar {
+        border-left: 1px solid var(--border);
+        background: var(--surface);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-height: 0;
+      }
+
+      .sidebar-section {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+
+      .sidebar-section.grow {
+        flex: 1;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        border-bottom: none;
+      }
+
+      .sidebar-title {
+        font-family: var(--font-display);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 10px;
+      }
+
+      /* ── Image list ── */
+      .image-list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-height: 160px;
+        overflow-y: auto;
+      }
+
+      .image-item {
+        padding: 7px 10px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        font-size: 11px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.12s;
+      }
+
+      .image-item:hover {
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .image-item.active {
+        background: var(--bg);
+        border-color: var(--border);
+        color: var(--text);
+      }
+
+      .image-item .img-name {
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--border);
+        flex-shrink: 0;
+        transition: background 0.2s;
+      }
+
+      .image-item.labeled .status-dot {
+        background: var(--accent-total);
+      }
+
+      .progress-bar {
+        height: 2px;
+        background: var(--border);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-top: 10px;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: var(--accent-total);
+        border-radius: 2px;
+        transition: width 0.4s ease;
+      }
+
+      /* ── Regions ── */
+      .regions-list {
+        flex: 1;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 4px 0;
+      }
+
+      .empty-state {
+        text-align: center;
+        padding: 28px 16px;
+        color: var(--text-muted);
+        font-size: 11px;
+        line-height: 2;
+      }
+
+      .region-card {
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .region-card.total-card {
+        border-left: 3px solid var(--accent-total);
+      }
+      .region-card.date-card {
+        border-left: 3px solid var(--accent-date);
+      }
+
+      .region-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .region-tag {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+
+      .region-tag.total {
+        background: var(--accent-total-dim);
+        color: var(--accent-total);
+      }
+      .region-tag.date {
+        background: var(--accent-date-dim);
+        color: var(--accent-date);
+      }
+
+      .del-btn {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 14px;
+        padding: 0 4px;
+        line-height: 1;
+        transition: color 0.15s;
+        font-family: var(--font-mono);
+      }
+      .del-btn:hover {
+        color: #ff4466;
+      }
+
+      .region-input {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 7px 10px;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 12px;
+        width: 100%;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      .region-input::placeholder {
+        color: #3a3a42;
+      }
+      .region-card.total-card .region-input:focus {
+        border-color: var(--accent-total);
+      }
+      .region-card.date-card .region-input:focus {
+        border-color: var(--accent-date);
+      }
+
+      .region-coords {
+        font-size: 10px;
+        color: #3a3a42;
+        letter-spacing: 0.3px;
+      }
+
+      /* ── Footer ── */
+      .sidebar-footer {
+        padding: 14px 16px;
+        border-top: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex-shrink: 0;
+      }
+
+      .nav-btns {
+        display: flex;
+        gap: 6px;
+      }
+
+      .nav-btn {
+        flex: 1;
+        padding: 8px;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .nav-btn:hover:not(:disabled) {
+        color: var(--text);
+        border-color: #444;
+      }
+      .nav-btn:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+      }
+
+      .save-btn {
+        width: 100%;
+        padding: 11px;
+        background: var(--accent-total);
+        color: #000;
+        border: none;
+        border-radius: 8px;
+        font-family: var(--font-display);
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+        letter-spacing: 0.3px;
+      }
+
+      .save-btn:hover {
+        opacity: 0.88;
+      }
+      .save-btn:active {
+        transform: scale(0.98);
+      }
+      .save-btn:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+      }
+
+      .export-btn {
+        width: 100%;
+        padding: 10px;
+        background: transparent;
+        color: var(--text-muted);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        font-family: var(--font-display);
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .export-btn:hover {
+        border-color: #555;
+        color: var(--text);
+      }
+
+      /* ── Toast ── */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(12px);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-size: 12px;
+        color: var(--text);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.2s;
+        z-index: 100;
+        white-space: nowrap;
+      }
+
+      .toast.show {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+      }
+
+      .toast.success {
+        border-color: var(--accent-total);
+        color: var(--accent-total);
+      }
+      .toast.error {
+        border-color: #ff4466;
+        color: #ff4466;
+      }
+
+      /* ── Scrollbars ── */
+      ::-webkit-scrollbar {
+        width: 4px;
+        height: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 2px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #444;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>receipt<span>.</span>label</h1>
+      <div class="header-right">
+        <div class="shortcuts">
+          <kbd>T</kbd> total &nbsp; <kbd>D</kbd> date &nbsp; <kbd>←</kbd
+          ><kbd>→</kbd> navigate &nbsp; <kbd>Del</kbd> clear
+        </div>
+        <div class="counter" id="counterDisplay">0 / 0 labeled</div>
+      </div>
+    </header>
+
+    <div class="app">
+      <!-- ── LEFT: canvas ── -->
+      <div class="canvas-area">
+        <div class="toolbar">
+          <button
+            class="tool-btn total active"
+            id="btnTotal"
+            onclick="setTool('total')"
+          >
+            <span class="dot total"></span> Total
+          </button>
+          <button class="tool-btn date" id="btnDate" onclick="setTool('date')">
+            <span class="dot date"></span> Date
+          </button>
+          <div class="toolbar-sep"></div>
+          <button class="tool-btn danger" onclick="clearCurrentRegions()">
+            ✕ Clear all regions
+          </button>
+          <div style="flex: 1"></div>
+          <span
+            id="zoomLabel"
+            style="font-size: 11px; color: var(--text-muted)"
+          ></span>
+        </div>
+
+        <div class="canvas-wrapper" id="canvasWrapper">
+          <div class="drop-zone" id="dropZone">
+            <input
+              type="file"
+              id="fileInput"
+              multiple
+              accept="image/*"
+              onchange="handleFiles(this.files)"
+            />
+            <div class="drop-icon">📄</div>
+            <div class="drop-label">
+              Drop receipt images here
+              <span class="drop-sub"
+                >or click to browse · supports multiple files at once</span
+              >
+            </div>
+          </div>
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+
+      <!-- ── RIGHT: sidebar ── -->
+      <div class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-title">Images (<span id="imgCount">0</span>)</div>
+          <div class="image-list" id="imageList">
+            <div class="empty-state">No images loaded</div>
+          </div>
+          <div class="progress-bar">
+            <div
+              class="progress-fill"
+              id="progressFill"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+
+        <div class="sidebar-section grow">
+          <div class="sidebar-title">
+            Regions —
+            <span
+              id="currentFilename"
+              style="
+                color: var(--text);
+                text-transform: none;
+                letter-spacing: 0;
+                font-weight: 400;
+              "
+              >—</span
+            >
+          </div>
+          <div class="regions-list" id="regionsList">
+            <div class="empty-state">
+              Load an image and draw<br />rectangles over totals and dates
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-footer">
+          <div class="nav-btns">
+            <button
+              class="nav-btn"
+              id="btnPrev"
+              onclick="navigate(-1)"
+              disabled
+            >
+              ← Prev
+            </button>
+            <button class="nav-btn" id="btnNext" onclick="navigate(1)" disabled>
+              Next →
+            </button>
+          </div>
+          <button
+            class="save-btn"
+            id="saveBtn"
+            onclick="saveCurrentLabels()"
+            disabled
+          >
+            Save Labels
+          </button>
+          <button class="export-btn" onclick="exportAll()">
+            ⬇ Export All JSON
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+      // ─────────────────────────────────────────────────────────────────────────
+      //  State
+      // ─────────────────────────────────────────────────────────────────────────
+      let images = []; // [{ file, name, url }]
+      let currentIdx = -1;
+      let currentTool = "total";
+      let drawing = false;
+      let startX = 0,
+        startY = 0;
+      let tempRect = null;
+      let allLabels = {}; // { filename: { total: [{x,y,w,h,value}], date: [...] } }
+
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const wrapper = document.getElementById("canvasWrapper");
+      let loadedImage = null;
+      let scale = 1;
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Tool selection
+      // ─────────────────────────────────────────────────────────────────────────
+      function setTool(t) {
+        currentTool = t;
+        document
+          .getElementById("btnTotal")
+          .classList.toggle("active", t === "total");
+        document
+          .getElementById("btnDate")
+          .classList.toggle("active", t === "date");
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  File handling
+      // ─────────────────────────────────────────────────────────────────────────
+      document.getElementById("dropZone").addEventListener("click", () => {
+        document.getElementById("fileInput").click();
+      });
+
+      document.getElementById("dropZone").addEventListener("dragover", (e) => {
+        e.preventDefault();
+        document.getElementById("dropZone").classList.add("drag-over");
+      });
+
+      document.getElementById("dropZone").addEventListener("dragleave", () => {
+        document.getElementById("dropZone").classList.remove("drag-over");
+      });
+
+      document.getElementById("dropZone").addEventListener("drop", (e) => {
+        e.preventDefault();
+        document.getElementById("dropZone").classList.remove("drag-over");
+        handleFiles(e.dataTransfer.files);
+      });
+
+      function handleFiles(files) {
+        const arr = Array.from(files).filter((f) =>
+          f.type.startsWith("image/"),
+        );
+        if (!arr.length) {
+          showToast("No valid image files found", "error");
+          return;
+        }
+
+        // merge — don't overwrite already-loaded images
+        arr.forEach((f) => {
+          if (!images.find((i) => i.name === f.name)) {
+            images.push({ file: f, name: f.name, url: URL.createObjectURL(f) });
+            if (!allLabels[f.name]) allLabels[f.name] = { total: [], date: [] };
+          }
+        });
+
+        document.getElementById("imgCount").textContent = images.length;
+        renderImageList();
+        if (currentIdx === -1) loadImage(0);
+
+        document.getElementById("dropZone").style.display = "none";
+        canvas.style.display = "block";
+        document.getElementById("saveBtn").disabled = false;
+        document.getElementById("btnPrev").disabled = false;
+        document.getElementById("btnNext").disabled = false;
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Load image onto canvas
+      // ─────────────────────────────────────────────────────────────────────────
+      function loadImage(idx) {
+        currentIdx = idx;
+        const imgData = images[idx];
+        const img = new Image();
+
+        img.onload = () => {
+          const maxW = wrapper.clientWidth - 48;
+          const maxH = wrapper.clientHeight - 48;
+          scale = Math.min(
+            1,
+            maxW / img.naturalWidth,
+            maxH / img.naturalHeight,
+          );
+
+          canvas.width = Math.round(img.naturalWidth * scale);
+          canvas.height = Math.round(img.naturalHeight * scale);
+
+          loadedImage = img;
+          document.getElementById("zoomLabel").textContent =
+            scale < 1 ? `${Math.round(scale * 100)}%` : "100%";
+
+          redraw();
+        };
+
+        img.src = imgData.url;
+        document.getElementById("currentFilename").textContent = imgData.name;
+
+        document.getElementById("btnPrev").disabled = idx === 0;
+        document.getElementById("btnNext").disabled = idx === images.length - 1;
+
+        renderRegions();
+        renderImageList();
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Draw
+      // ─────────────────────────────────────────────────────────────────────────
+      function redraw() {
+        if (!loadedImage) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(loadedImage, 0, 0, canvas.width, canvas.height);
+
+        const labels = allLabels[images[currentIdx].name] || {
+          total: [],
+          date: [],
+        };
+        paintRegions(labels.total, "total");
+        paintRegions(labels.date, "date");
+
+        if (tempRect)
+          paintRect(
+            tempRect.x,
+            tempRect.y,
+            tempRect.w,
+            tempRect.h,
+            currentTool,
+            0.6,
+          );
+      }
+
+      function paintRegions(regions, type) {
+        regions.forEach((r) => {
+          const sx = r.x * scale,
+            sy = r.y * scale,
+            sw = r.w * scale,
+            sh = r.h * scale;
+          ctx.fillStyle =
+            type === "total" ? "rgba(0,229,160,0.15)" : "rgba(255,107,53,0.15)";
+          ctx.fillRect(sx, sy, sw, sh);
+          paintRect(sx, sy, sw, sh, type, 1);
+        });
+      }
+
+      function paintRect(x, y, w, h, type, alpha) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = type === "total" ? "#00e5a0" : "#ff6b35";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
+        // corner handles
+        const cs = 6;
+        const corners = [
+          [x, y],
+          [x + w, y],
+          [x, y + h],
+          [x + w, y + h],
+        ];
+        corners.forEach(([cx, cy]) => {
+          ctx.fillStyle = type === "total" ? "#00e5a0" : "#ff6b35";
+          ctx.fillRect(cx - cs / 2, cy - cs / 2, cs, cs);
+        });
+        ctx.restore();
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Mouse events
+      // ─────────────────────────────────────────────────────────────────────────
+      canvas.addEventListener("mousedown", (e) => {
+        if (!loadedImage) return;
+        const r = canvas.getBoundingClientRect();
+        startX = e.clientX - r.left;
+        startY = e.clientY - r.top;
+        drawing = true;
+        tempRect = null;
+      });
+
+      canvas.addEventListener("mousemove", (e) => {
+        if (!drawing) return;
+        const r = canvas.getBoundingClientRect();
+        const cx = e.clientX - r.left;
+        const cy = e.clientY - r.top;
+        tempRect = {
+          x: Math.min(startX, cx),
+          y: Math.min(startY, cy),
+          w: Math.abs(cx - startX),
+          h: Math.abs(cy - startY),
+        };
+        redraw();
+      });
+
+      canvas.addEventListener("mouseup", () => {
+        if (!drawing) return;
+        drawing = false;
+
+        if (!tempRect || tempRect.w < 6 || tempRect.h < 6) {
+          tempRect = null;
+          redraw();
+          return;
+        }
+
+        const region = {
+          x: Math.round(tempRect.x / scale),
+          y: Math.round(tempRect.y / scale),
+          w: Math.round(tempRect.w / scale),
+          h: Math.round(tempRect.h / scale),
+          value: "",
+        };
+
+        allLabels[images[currentIdx].name][currentTool].push(region);
+        tempRect = null;
+        redraw();
+        renderRegions();
+
+        // focus the newly added input
+        setTimeout(() => {
+          const inputs = document.querySelectorAll(".region-input");
+          if (inputs.length) inputs[inputs.length - 1].focus();
+        }, 50);
+      });
+
+      // touch
+      function toMouse(touch, type) {
+        return new MouseEvent(type, {
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+        });
+      }
+      canvas.addEventListener(
+        "touchstart",
+        (e) => {
+          e.preventDefault();
+          canvas.dispatchEvent(toMouse(e.touches[0], "mousedown"));
+        },
+        { passive: false },
+      );
+      canvas.addEventListener(
+        "touchmove",
+        (e) => {
+          e.preventDefault();
+          canvas.dispatchEvent(toMouse(e.touches[0], "mousemove"));
+        },
+        { passive: false },
+      );
+      canvas.addEventListener(
+        "touchend",
+        (e) => {
+          e.preventDefault();
+          canvas.dispatchEvent(new MouseEvent("mouseup"));
+        },
+        { passive: false },
+      );
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Sidebar — regions
+      // ─────────────────────────────────────────────────────────────────────────
+      function renderRegions() {
+        const container = document.getElementById("regionsList");
+        if (currentIdx < 0) return;
+
+        const name = images[currentIdx].name;
+        const labels = allLabels[name];
+        const all = [
+          ...labels.total.map((r, i) => ({ ...r, type: "total", idx: i })),
+          ...labels.date.map((r, i) => ({ ...r, type: "date", idx: i })),
+        ];
+
+        if (!all.length) {
+          container.innerHTML =
+            '<div class="empty-state">Draw rectangles on the image<br>to mark totals and dates</div>';
+          return;
+        }
+
+        container.innerHTML = all
+          .map(
+            (r) => `
+      <div class="region-card ${r.type}-card" id="card-${r.type}-${r.idx}">
+        <div class="region-header">
+          <span class="region-tag ${r.type}">${r.type === "total" ? "💰 Total" : "📅 Date"}</span>
+          <button class="del-btn" onclick="deleteRegion('${r.type}', ${r.idx})" title="Delete region">✕</button>
+        </div>
+        <input
+          class="region-input"
+          placeholder="${r.type === "total" ? "e.g. 42.500" : "e.g. 13/04/2026"}"
+          value="${escapeHtml(r.value)}"
+          oninput="updateValue('${r.type}', ${r.idx}, this.value)"
+        />
+        <div class="region-coords">x:${r.x} y:${r.y} &nbsp; ${r.w}×${r.h}px</div>
+      </div>
+    `,
+          )
+          .join("");
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, "&amp;")
+          .replace(/"/g, "&quot;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function updateValue(type, idx, val) {
+        allLabels[images[currentIdx].name][type][idx].value = val;
+        updateCounter();
+      }
+
+      function deleteRegion(type, idx) {
+        allLabels[images[currentIdx].name][type].splice(idx, 1);
+        redraw();
+        renderRegions();
+        updateCounter();
+      }
+
+      function clearCurrentRegions() {
+        if (currentIdx < 0) return;
+        allLabels[images[currentIdx].name] = { total: [], date: [] };
+        redraw();
+        renderRegions();
+        updateCounter();
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Sidebar — image list
+      // ─────────────────────────────────────────────────────────────────────────
+      function renderImageList() {
+        const container = document.getElementById("imageList");
+        if (!images.length) {
+          container.innerHTML =
+            '<div class="empty-state">No images loaded</div>';
+          return;
+        }
+
+        container.innerHTML = images
+          .map(
+            (img, i) => `
+      <div class="image-item ${i === currentIdx ? "active" : ""} ${isLabeled(img.name) ? "labeled" : ""}"
+           onclick="loadImage(${i})">
+        <span class="img-name">${escapeHtml(img.name)}</span>
+        <span class="status-dot"></span>
+      </div>
+    `,
+          )
+          .join("");
+
+        updateCounter();
+      }
+
+      function isLabeled(name) {
+        const l = allLabels[name];
+        return (
+          l &&
+          (l.total.some((r) => r.value.trim()) ||
+            l.date.some((r) => r.value.trim()))
+        );
+      }
+
+      function updateCounter() {
+        const labeled = images.filter((i) => isLabeled(i.name)).length;
+        const total = images.length;
+        document.getElementById("counterDisplay").textContent =
+          `${labeled} / ${total} labeled`;
+        document.getElementById("progressFill").style.width = total
+          ? `${(labeled / total) * 100}%`
+          : "0%";
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Navigation
+      // ─────────────────────────────────────────────────────────────────────────
+      function navigate(dir) {
+        const next = currentIdx + dir;
+        if (next >= 0 && next < images.length) loadImage(next);
+      }
+
+      document.addEventListener("keydown", (e) => {
+        if (["INPUT", "TEXTAREA"].includes(document.activeElement.tagName))
+          return;
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") navigate(1);
+        if (e.key === "ArrowLeft" || e.key === "ArrowUp") navigate(-1);
+        if (e.key === "t" || e.key === "T") setTool("total");
+        if (e.key === "d" || e.key === "D") setTool("date");
+        if (e.key === "Delete" || e.key === "Backspace") {
+          if (document.activeElement === document.body) clearCurrentRegions();
+        }
+      });
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Save & Export
+      // ─────────────────────────────────────────────────────────────────────────
+      function saveCurrentLabels() {
+        if (currentIdx < 0) return;
+        renderImageList();
+        updateCounter();
+        showToast(`Labels saved for ${images[currentIdx].name} ✓`, "success");
+      }
+
+      function exportAll() {
+        const output = Object.entries(allLabels)
+          .filter(([, labels]) => labels.total.length || labels.date.length)
+          .map(([name, labels]) => ({
+            image: name,
+            total: labels.total.map((r) => ({
+              value: r.value,
+              box: [r.x, r.y, r.w, r.h],
+            })),
+            date: labels.date.map((r) => ({
+              value: r.value,
+              box: [r.x, r.y, r.w, r.h],
+            })),
+          }));
+
+        if (!output.length) {
+          showToast("No labels to export yet", "error");
+          return;
+        }
+
+        const json = JSON.stringify(output, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "receipt_labels.json";
+        a.click();
+        URL.revokeObjectURL(url);
+
+        showToast(`Exported ${output.length} labeled receipt(s) ✓`, "success");
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      //  Toast
+      // ─────────────────────────────────────────────────────────────────────────
+      let toastTimer = null;
+      function showToast(msg, type = "") {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = `toast ${type} show`;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          t.classList.remove("show");
+        }, 2500);
+      }
+    </script>
+  </body>
+</html>
