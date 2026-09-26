@@ -1,4 +1,4 @@
 /node_modules
 /llm-images
 old_receipt_labels.json
-receipt_labels.json
+receipt_labels.json.bob-review-output.md
