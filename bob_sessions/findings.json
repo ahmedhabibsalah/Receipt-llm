@@ -6,7 +6,12 @@
     "issue": "No file upload validation",
     "description": "multer is configured with no fileFilter, limits, or MIME-type check. Any file type (e.g. .exe, .html) can be uploaded and written to disk.",
     "fix": "Add a fileFilter to reject non-image MIME types and add limits: { fileSize: 10 * 1024 * 1024 } to cap upload size.",
-    "line": 13
+    "line": 13,
+    "patch": {
+      "before": "const upload = multer({ dest: \"uploads/\" });",
+      "after": "const ALLOWED_MIME = new Set([\n  \"image/jpeg\",\n  \"image/png\",\n  \"image/webp\",\n  \"image/x-jfif\",\n  \"image/jfif\",\n]);\n\nconst upload = multer({\n  dest: \"uploads/\",\n  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB\n  fileFilter(_req, file, cb) {\n    if (ALLOWED_MIME.has(file.mimetype)) {\n      cb(null, true);\n    } else {\n      cb(new Error(`Unsupported file type: ${file.mimetype}`));\n    }\n  },\n});",
+      "generatedByBob": true
+    }
   },
   {
     "file": "demo/server.js",
@@ -15,7 +20,12 @@
     "issue": "req.file never null-checked before use",
     "description": "req.file.path and req.file.originalname will throw TypeError: Cannot read properties of undefined if the multipart form is sent without a file field, crashing both /api/validate and /api/extract handlers.",
     "fix": "Add a guard at the top of each handler: if (!req.file) return res.status(400).json({ error: 'No file uploaded' });",
-    "line": 68
+    "line": 68,
+    "patch": {
+      "before": "app.post(\"/api/validate\", upload.single(\"image\"), async (req, res) => {\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
+      "after": "app.post(\"/api/validate\", upload.single(\"image\"), async (req, res) => {\n  if (!req.file) {\n    return res.status(400).json({ error: \"No image file provided\" });\n  }\n\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
+      "generatedByBob": true
+    }
   },
   {
     "file": "demo/server.js",

@@ -1,0 +1,23 @@
+[
+  {
+    "file": "demo/server.js",
+    "id": "S1",
+    "before": "const upload = multer({ dest: \"uploads/\" });",
+    "after": "const ALLOWED_MIME = new Set([\n  \"image/jpeg\",\n  \"image/png\",\n  \"image/webp\",\n  \"image/x-jfif\",\n  \"image/jfif\",\n]);\n\nconst upload = multer({\n  dest: \"uploads/\",\n  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB\n  fileFilter(_req, file, cb) {\n    if (ALLOWED_MIME.has(file.mimetype)) {\n      cb(null, true);\n    } else {\n      cb(new Error(`Unsupported file type: ${file.mimetype}`));\n    }\n  },\n});",
+    "generatedByBob": true
+  },
+  {
+    "file": "demo/server.js",
+    "id": "S2",
+    "before": "app.post(\"/api/validate\", upload.single(\"image\"), async (req, res) => {\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
+    "after": "app.post(\"/api/validate\", upload.single(\"image\"), async (req, res) => {\n  if (!req.file) {\n    return res.status(400).json({ error: \"No image file provided\" });\n  }\n\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
+    "generatedByBob": true
+  },
+  {
+    "file": "demo/server.js",
+    "id": "S2-extract",
+    "before": "app.post(\"/api/extract\", upload.single(\"image\"), async (req, res) => {\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
+    "after": "app.post(\"/api/extract\", upload.single(\"image\"), async (req, res) => {\n  if (!req.file) {\n    return res.status(400).json({ error: \"No image file provided\" });\n  }\n\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
+    "generatedByBob": true
+  }
+]
