@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T18:45:08.163Z",
+  "generatedAt": "2026-09-26T18:48:14.724Z",
   "scoring": {
     "findingWeight": "high=3, medium=2, low=1, summed per file",
     "blastRadius": "count of files that import this one, x2",
@@ -368,7 +368,12 @@
           "issue": "WebP format not supported despite being present in dataset",
           "description": "decodeImage throws 'Unsupported image format: .webp' for WebP files. The llm-images/ directory contains 35.webp and the dataset scanner explicitly lists 'webp' as an accepted extension, creating a silent data gap during training.",
           "fix": "Add WebP decoding via the sharp package (sharp(buffer).toFormat('png').toBuffer()), or convert WebP files to JPEG at upload/ingest time before calling decodeImage.",
-          "line": 8
+          "line": 8,
+          "patch": {
+            "before": "const fs = require(\"fs\");\nconst jpeg = require(\"jpeg-js\");\nconst { PNG } = require(\"pngjs\");\n\n// Decodes JPEG or PNG → { width, height, data } where data is a Uint8Array of RGBA pixels.\n// Drop-in replacement for `jpeg.decode(buffer, { useTArray: true })`.\n// PNG transparency is composited onto a white background (suitable for receipts).\nfunction decodeImage(imagePath) {\n  const ext = imagePath.toLowerCase().split(\".\").pop();\n  const buffer = fs.readFileSync(imagePath);\n\n  if (ext === \"jpg\" || ext === \"jpeg\" || ext === \"jfif\") {\n    return jpeg.decode(buffer, { useTArray: true });\n  }\n\n  if (ext === \"png\") {",
+            "after": "const fs = require(\"fs\");\nconst jpeg = require(\"jpeg-js\");\nconst { PNG } = require(\"pngjs\");\nconst sharp = require(\"sharp\"); // npm install sharp  (handles WebP, AVIF, TIFF, etc.)\n\n// Decodes JPEG, PNG, or WebP → { width, height, data } where data is a Uint8Array of RGBA pixels.\n// Drop-in replacement for `jpeg.decode(buffer, { useTArray: true })`.\n// PNG/WebP transparency is composited onto a white background (suitable for receipts).\nfunction decodeImage(imagePath) {\n  const ext = imagePath.toLowerCase().split(\".\").pop();\n  const buffer = fs.readFileSync(imagePath);\n\n  if (ext === \"jpg\" || ext === \"jpeg\" || ext === \"jfif\") {\n    return jpeg.decode(buffer, { useTArray: true });\n  }\n\n  if (ext === \"webp\") {\n    // sharp.sync is not available; decode synchronously via spawnSync\n    const { spawnSync } = require(\"child_process\");\n    const result = spawnSync(\n      process.execPath,\n      [\"-e\",\n       `const sharp=require('sharp');` +\n       `sharp(require('fs').readFileSync(process.argv[1]))` +\n       `.raw().toBuffer((err,data,info)=>{` +\n       `if(err)throw err;` +\n       `process.stdout.write(Buffer.concat([` +\n         `Buffer.from(JSON.stringify({w:info.width,h:info.height})+\"\\\\n\",'utf8'),` +\n         `data` +\n       `]));});`,\n       imagePath],\n      { maxBuffer: 50 * 1024 * 1024 }\n    );\n    if (result.status !== 0) {\n      throw new Error(`WebP decode failed: ${result.stderr.toString().trim()}`);\n    }\n    const nlIdx = result.stdout.indexOf(10); // newline after JSON header\n    const { w: width, h: height } = JSON.parse(result.stdout.slice(0, nlIdx).toString());\n    const rgb = result.stdout.slice(nlIdx + 1); // raw RGB (3 bytes/pixel from sharp .raw())\n    const data = new Uint8Array(width * height * 4);\n    for (let i = 0, j = 0; i < data.length; i += 4, j += 3) {\n      data[i] = rgb[j]; data[i+1] = rgb[j+1]; data[i+2] = rgb[j+2]; data[i+3] = 255;\n    }\n    return { width, height, data };\n  }\n\n  if (ext === \"png\") {",
+            "generatedByBob": true
+          }
         },
         {
           "file": "lib/image-decode.js",
