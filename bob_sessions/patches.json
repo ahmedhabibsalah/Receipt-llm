@@ -19,5 +19,19 @@
     "before": "app.post(\"/api/extract\", upload.single(\"image\"), async (req, res) => {\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
     "after": "app.post(\"/api/extract\", upload.single(\"image\"), async (req, res) => {\n  if (!req.file) {\n    return res.status(400).json({ error: \"No image file provided\" });\n  }\n\n  const startTime = Date.now();\n\n  try {\n    const uploadedPath = req.file.path;\n    const originalName = req.file.originalname;",
     "generatedByBob": true
+  },
+  {
+    "file": "ml/image-utils.js",
+    "id": "I1",
+    "before": "  // Stack all tensors into a single batch\n  const xs = tf.stack(tensors);",
+    "after": "  // Stack all tensors into a single batch\n  if (tensors.length === 0) {\n    throw new Error(\n      \"No valid images to convert — check image paths and formats\"\n    );\n  }\n  const xs = tf.stack(tensors);",
+    "generatedByBob": true
+  },
+  {
+    "file": "ml/image-utils.js",
+    "id": "I2",
+    "before": "  // Clamp crop coordinates to image bounds\n  const cropX = Math.max(0, Math.min(x, imgWidth - 1));\n  const cropY = Math.max(0, Math.min(y, imgHeight - 1));\n  const cropW = Math.min(w, imgWidth - cropX);\n  const cropH = Math.min(h, imgHeight - cropY);\n\n  // Extract the cropped region pixel data (RGB only, skip alpha)",
+    "after": "  // Clamp crop coordinates to image bounds\n  const cropX = Math.max(0, Math.min(x, imgWidth - 1));\n  const cropY = Math.max(0, Math.min(y, imgHeight - 1));\n  const cropW = Math.min(w, imgWidth - cropX);\n  const cropH = Math.min(h, imgHeight - cropY);\n\n  if (cropW <= 0 || cropH <= 0) {\n    throw new Error(\n      `Crop box is outside image bounds: box=[${x},${y},${w},${h}], image=${imgWidth}x${imgHeight}`\n    );\n  }\n\n  // Extract the cropped region pixel data (RGB only, skip alpha)",
+    "generatedByBob": true
   }
 ]

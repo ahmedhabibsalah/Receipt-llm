@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T17:46:45.523Z",
+  "generatedAt": "2026-09-26T18:17:38.158Z",
   "scoring": {
     "findingWeight": "high=3, medium=2, low=1, summed per file",
     "blastRadius": "count of files that import this one, x2",
@@ -106,7 +106,12 @@
           "issue": "tf.stack called on empty tensor array",
           "description": "In datasetToTensors, if every imageToTensor call throws (e.g. all images corrupt), tensors is [] and tf.stack([]) throws 'No tensors provided', crashing the training run with an unhelpful error.",
           "fix": "Add a guard before tf.stack: if (tensors.length === 0) throw new Error('No valid images to convert — check image paths and formats');",
-          "line": 79
+          "line": 79,
+          "patch": {
+            "before": "  // Stack all tensors into a single batch\n  const xs = tf.stack(tensors);",
+            "after": "  // Stack all tensors into a single batch\n  if (tensors.length === 0) {\n    throw new Error(\n      \"No valid images to convert — check image paths and formats\"\n    );\n  }\n  const xs = tf.stack(tensors);",
+            "generatedByBob": true
+          }
         },
         {
           "file": "ml/image-utils.js",
@@ -115,7 +120,12 @@
           "issue": "Zero-area tensor produced when crop box is outside image bounds",
           "description": "If the box coordinates place the crop entirely outside the image, cropW or cropH clamps to 0 or below. tf.tensor3d with a zero dimension silently produces an invalid tensor that causes downstream model errors.",
           "fix": "After clamping, add: if (cropW <= 0 || cropH <= 0) throw new Error(`Crop box is outside image bounds: box=${JSON.stringify(box)}, image=${imgWidth}x${imgHeight}`);",
-          "line": 21
+          "line": 21,
+          "patch": {
+            "before": "  // Clamp crop coordinates to image bounds\n  const cropX = Math.max(0, Math.min(x, imgWidth - 1));\n  const cropY = Math.max(0, Math.min(y, imgHeight - 1));\n  const cropW = Math.min(w, imgWidth - cropX);\n  const cropH = Math.min(h, imgHeight - cropY);\n\n  // Extract the cropped region pixel data (RGB only, skip alpha)",
+            "after": "  // Clamp crop coordinates to image bounds\n  const cropX = Math.max(0, Math.min(x, imgWidth - 1));\n  const cropY = Math.max(0, Math.min(y, imgHeight - 1));\n  const cropW = Math.min(w, imgWidth - cropX);\n  const cropH = Math.min(h, imgHeight - cropY);\n\n  if (cropW <= 0 || cropH <= 0) {\n    throw new Error(\n      `Crop box is outside image bounds: box=[${x},${y},${w},${h}], image=${imgWidth}x${imgHeight}`\n    );\n  }\n\n  // Extract the cropped region pixel data (RGB only, skip alpha)",
+            "generatedByBob": true
+          }
         }
       ],
       "findingCount": 2,
