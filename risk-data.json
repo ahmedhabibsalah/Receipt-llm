@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T18:17:38.158Z",
+  "generatedAt": "2026-09-26T18:39:39.392Z",
   "scoring": {
     "findingWeight": "high=3, medium=2, low=1, summed per file",
     "blastRadius": "count of files that import this one, x2",
@@ -153,7 +153,12 @@
           "issue": "python binary assumed on PATH",
           "description": "spawn(\"python\", ...) silently fails on systems where the Python binary is named python3. The failure surfaces only as a non-zero exit code with a cryptic stderr message.",
           "fix": "Read the binary from an environment variable with a sensible default: process.env.PYTHON_BIN ?? 'python3', and document the requirement.",
-          "line": 16
+          "line": 16,
+          "patch": {
+            "before": "    // spawn python process with image path as argument\n    const process = spawn(\"python\", [scriptPath, imagePath]);",
+            "after": "    // spawn python process with image path as argument\n    const pythonBin = process.env.PYTHON_BIN ?? \"python3\";\n    const process = spawn(pythonBin, [scriptPath, imagePath]);",
+            "generatedByBob": true
+          }
         },
         {
           "file": "pipeline/ocr.js",
@@ -162,7 +167,12 @@
           "issue": "cropRegion writes to a fixed global temp path",
           "description": "The cropped image is always written to temp_crop.jpg at a fixed path. Concurrent requests will overwrite each other's crop file, causing incorrect OCR results or file-not-found errors under load.",
           "fix": "Generate a unique filename per call using crypto.randomUUID() or a timestamp, and delete it after use.",
-          "line": 114
+          "line": 114,
+          "patch": {
+            "before": "const { spawn } = require(\"child_process\");\nconst path = require(\"path\");\nconst fs = require(\"fs\");",
+            "after": "const { spawn } = require(\"child_process\");\nconst path = require(\"path\");\nconst fs = require(\"fs\");\nconst crypto = require(\"crypto\");",
+            "generatedByBob": true
+          }
         },
         {
           "file": "pipeline/ocr.js",

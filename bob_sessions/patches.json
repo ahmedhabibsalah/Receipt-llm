@@ -33,5 +33,26 @@
     "before": "  // Clamp crop coordinates to image bounds\n  const cropX = Math.max(0, Math.min(x, imgWidth - 1));\n  const cropY = Math.max(0, Math.min(y, imgHeight - 1));\n  const cropW = Math.min(w, imgWidth - cropX);\n  const cropH = Math.min(h, imgHeight - cropY);\n\n  // Extract the cropped region pixel data (RGB only, skip alpha)",
     "after": "  // Clamp crop coordinates to image bounds\n  const cropX = Math.max(0, Math.min(x, imgWidth - 1));\n  const cropY = Math.max(0, Math.min(y, imgHeight - 1));\n  const cropW = Math.min(w, imgWidth - cropX);\n  const cropH = Math.min(h, imgHeight - cropY);\n\n  if (cropW <= 0 || cropH <= 0) {\n    throw new Error(\n      `Crop box is outside image bounds: box=[${x},${y},${w},${h}], image=${imgWidth}x${imgHeight}`\n    );\n  }\n\n  // Extract the cropped region pixel data (RGB only, skip alpha)",
     "generatedByBob": true
+  },
+  {
+    "file": "pipeline/ocr.js",
+    "id": "O1",
+    "before": "    // spawn python process with image path as argument\n    const process = spawn(\"python\", [scriptPath, imagePath]);",
+    "after": "    // spawn python process with image path as argument\n    const pythonBin = process.env.PYTHON_BIN ?? \"python3\";\n    const process = spawn(pythonBin, [scriptPath, imagePath]);",
+    "generatedByBob": true
+  },
+  {
+    "file": "pipeline/ocr.js",
+    "id": "O2",
+    "before": "const { spawn } = require(\"child_process\");\nconst path = require(\"path\");\nconst fs = require(\"fs\");",
+    "after": "const { spawn } = require(\"child_process\");\nconst path = require(\"path\");\nconst fs = require(\"fs\");\nconst crypto = require(\"crypto\");",
+    "generatedByBob": true
+  },
+  {
+    "file": "pipeline/ocr.js",
+    "id": "O2-cropRegion",
+    "before": "  const encoded = jpeg.encode(\n    { data: Buffer.from(scaledData), width: scaledW, height: scaledH },\n    95,\n  );\n  const tempPath = path.join(__dirname, \"..\", \"temp_crop.jpg\");\n  fs.writeFileSync(tempPath, encoded.data);\n\n  return tempPath;",
+    "after": "  const encoded = jpeg.encode(\n    { data: Buffer.from(scaledData), width: scaledW, height: scaledH },\n    95,\n  );\n  const tempPath = path.join(\n    __dirname,\n    \"..\",\n    `temp_crop_${crypto.randomUUID()}.jpg`,\n  );\n  fs.writeFileSync(tempPath, encoded.data);\n\n  return tempPath;",
+    "generatedByBob": true
   }
 ]
