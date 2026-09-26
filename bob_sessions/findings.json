@@ -125,7 +125,12 @@
     "issue": "No file-existence check before readtext",
     "description": "If the image path passed as a CLI argument does not exist, EasyOCR raises an unhandled Python exception, exiting non-zero. Node.js receives only a raw traceback in stderr with no structured error.",
     "fix": "Add an existence check: if not os.path.exists(image_path): print(json.dumps({'error': 'file not found'}), file=sys.stderr); sys.exit(1).",
-    "line": 38
+    "line": 38,
+    "patch": {
+      "before": "    image_path = sys.argv[1]\n    read_image(image_path)",
+      "after": "    image_path = sys.argv[1]\n\n    if not os.path.exists(image_path):\n        print(json.dumps({'error': f'file not found: {image_path}'}), file=sys.stderr)\n        sys.exit(1)\n\n    read_image(image_path)",
+      "generatedByBob": true
+    }
   },
   {
     "file": "pipeline/ocr_engine.py",

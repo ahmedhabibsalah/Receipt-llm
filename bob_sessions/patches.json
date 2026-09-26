@@ -82,5 +82,19 @@
     "before": "main();\n\nmodule.exports = { generateDataset };",
     "after": "if (require.main === module) main();\n\nmodule.exports = { generateDataset };",
     "generatedByBob": true
+  },
+  {
+    "file": "pipeline/ocr_engine.py",
+    "id": "P1-import",
+    "before": "import easyocr\nimport sys\nimport json",
+    "after": "import easyocr\nimport sys\nimport json\nimport os",
+    "generatedByBob": true
+  },
+  {
+    "file": "pipeline/ocr_engine.py",
+    "id": "P1",
+    "before": "    image_path = sys.argv[1]\n    read_image(image_path)",
+    "after": "    image_path = sys.argv[1]\n\n    if not os.path.exists(image_path):\n        print(json.dumps({'error': f'file not found: {image_path}'}), file=sys.stderr)\n        sys.exit(1)\n\n    read_image(image_path)",
+    "generatedByBob": true
   }
 ]
