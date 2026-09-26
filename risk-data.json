@@ -1,0 +1,421 @@
+{
+  "generatedAt": "2026-09-26T16:44:40.768Z",
+  "scoring": {
+    "findingWeight": "high=3, medium=2, low=1, summed per file",
+    "blastRadius": "count of files that import this one, x2",
+    "exposureScore": "0-3, direct external reachability (HTTP server=3, routes=2, CLI/script entry=1), x3",
+    "riskScore": "findingWeight + blastRadius*2 + exposureScore*3"
+  },
+  "files": [
+    {
+      "file": "demo/server.js",
+      "findings": [
+        {
+          "file": "demo/server.js",
+          "id": "S1",
+          "severity": "high",
+          "issue": "No file upload validation",
+          "description": "multer is configured with no fileFilter, limits, or MIME-type check. Any file type (e.g. .exe, .html) can be uploaded and written to disk.",
+          "fix": "Add a fileFilter to reject non-image MIME types and add limits: { fileSize: 10 * 1024 * 1024 } to cap upload size.",
+          "line": 13
+        },
+        {
+          "file": "demo/server.js",
+          "id": "S2",
+          "severity": "high",
+          "issue": "req.file never null-checked before use",
+          "description": "req.file.path and req.file.originalname will throw TypeError: Cannot read properties of undefined if the multipart form is sent without a file field, crashing both /api/validate and /api/extract handlers.",
+          "fix": "Add a guard at the top of each handler: if (!req.file) return res.status(400).json({ error: 'No file uploaded' });",
+          "line": 68
+        },
+        {
+          "file": "demo/server.js",
+          "id": "S3",
+          "severity": "high",
+          "issue": "Path traversal risk via originalname extension",
+          "description": "path.extname(req.file.originalname) is used to rename the temp file. A filename with no extension makes imagePath === uploadedPath, so the rename is a no-op and the file is not cleaned up on success. A crafted filename could also produce unexpected paths.",
+          "fix": "Whitelist allowed extensions: const ALLOWED_EXT = new Set(['.jpg','.jpeg','.png','.jfif','.webp']); reject anything not in the set before renaming.",
+          "line": 70
+        },
+        {
+          "file": "demo/server.js",
+          "id": "S4",
+          "severity": "medium",
+          "issue": "Startup model-load errors are swallowed",
+          "description": "If model files are missing, await loadValidator() on startup rejects. The server process keeps running but every subsequent /api/validate call re-attempts disk reads and fails repeatedly.",
+          "fix": "Wrap the startup preload in try/catch, log a fatal warning, and optionally set a flag so the endpoint returns 503 immediately instead of re-attempting.",
+          "line": 215
+        },
+        {
+          "file": "demo/server.js",
+          "id": "S5",
+          "severity": "medium",
+          "issue": "Tensor leak on error path of /api/validate",
+          "description": "tensor, input, features, flattened, and prediction are only disposed in the success branch. If prediction.data() throws, all five TensorFlow.js tensors leak, causing memory growth.",
+          "fix": "Move all tensor.dispose() calls into a finally block so they run regardless of whether the prediction succeeds or throws.",
+          "line": 93
+        },
+        {
+          "file": "demo/server.js",
+          "id": "S6",
+          "severity": "medium",
+          "issue": "Hardcoded port with no environment override",
+          "description": "const PORT = 3000 ignores any environment-level port configuration, making it impossible to run in containerised or multi-tenant environments without editing the source.",
+          "fix": "Replace with const PORT = process.env.PORT ?? 3000;",
+          "line": 200
+        },
+        {
+          "file": "demo/server.js",
+          "id": "S7",
+          "severity": "low",
+          "issue": "CORS fully open",
+          "description": "app.use(cors()) allows requests from any origin. This is acceptable for a local demo but presents a risk if the server is ever exposed beyond localhost.",
+          "fix": "Pass a specific origin: cors({ origin: 'http://localhost:3000' }), or add a comment documenting the intentional open policy.",
+          "line": 15
+        }
+      ],
+      "findingCount": 7,
+      "findingWeight": 16,
+      "blastRadius": 0,
+      "dependents": [],
+      "exposureScore": 3,
+      "exposureReasons": [
+        "starts an HTTP server directly",
+        "defines HTTP route handlers"
+      ],
+      "riskScore": 25,
+      "rank": 1
+    },
+    {
+      "file": "ml/image-utils.js",
+      "findings": [
+        {
+          "file": "ml/image-utils.js",
+          "id": "I1",
+          "severity": "high",
+          "issue": "tf.stack called on empty tensor array",
+          "description": "In datasetToTensors, if every imageToTensor call throws (e.g. all images corrupt), tensors is [] and tf.stack([]) throws 'No tensors provided', crashing the training run with an unhelpful error.",
+          "fix": "Add a guard before tf.stack: if (tensors.length === 0) throw new Error('No valid images to convert — check image paths and formats');",
+          "line": 79
+        },
+        {
+          "file": "ml/image-utils.js",
+          "id": "I2",
+          "severity": "medium",
+          "issue": "Zero-area tensor produced when crop box is outside image bounds",
+          "description": "If the box coordinates place the crop entirely outside the image, cropW or cropH clamps to 0 or below. tf.tensor3d with a zero dimension silently produces an invalid tensor that causes downstream model errors.",
+          "fix": "After clamping, add: if (cropW <= 0 || cropH <= 0) throw new Error(`Crop box is outside image bounds: box=${JSON.stringify(box)}, image=${imgWidth}x${imgHeight}`);",
+          "line": 21
+        }
+      ],
+      "findingCount": 2,
+      "findingWeight": 5,
+      "blastRadius": 5,
+      "dependents": [
+        "demo/server.js",
+        "ml/receipt-detector-dataset.js",
+        "ml/test-receipt-detector-tensors.js",
+        "ml/test-receipt-detector.js",
+        "ml/train-receipt-detector.js"
+      ],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 15,
+      "rank": 2
+    },
+    {
+      "file": "pipeline/ocr.js",
+      "findings": [
+        {
+          "file": "pipeline/ocr.js",
+          "id": "O1",
+          "severity": "high",
+          "issue": "python binary assumed on PATH",
+          "description": "spawn(\"python\", ...) silently fails on systems where the Python binary is named python3. The failure surfaces only as a non-zero exit code with a cryptic stderr message.",
+          "fix": "Read the binary from an environment variable with a sensible default: process.env.PYTHON_BIN ?? 'python3', and document the requirement.",
+          "line": 16
+        },
+        {
+          "file": "pipeline/ocr.js",
+          "id": "O2",
+          "severity": "high",
+          "issue": "cropRegion writes to a fixed global temp path",
+          "description": "The cropped image is always written to temp_crop.jpg at a fixed path. Concurrent requests will overwrite each other's crop file, causing incorrect OCR results or file-not-found errors under load.",
+          "fix": "Generate a unique filename per call using crypto.randomUUID() or a timestamp, and delete it after use.",
+          "line": 114
+        },
+        {
+          "file": "pipeline/ocr.js",
+          "id": "O3",
+          "severity": "medium",
+          "issue": "cropRegion temp file never deleted",
+          "description": "The temp crop file is written to disk and its path returned to the caller, but there is no guarantee the file is cleaned up if the subsequent OCR call fails, leaving stale files on disk.",
+          "fix": "Either delete the temp file inside cropRegion after encoding (and pass the data directly), or return a cleanup callback that callers must invoke in a finally block.",
+          "line": 115
+        },
+        {
+          "file": "pipeline/ocr.js",
+          "id": "O4",
+          "severity": "low",
+          "issue": "No timeout on spawned Python process",
+          "description": "A hung or unresponsive EasyOCR run will keep the Node.js request open indefinitely, exhausting server resources under repeated use.",
+          "fix": "Use AbortSignal or a setTimeout that calls childProcess.kill() after a reasonable deadline (e.g. 60 seconds), then reject the promise.",
+          "line": 12
+        }
+      ],
+      "findingCount": 4,
+      "findingWeight": 9,
+      "blastRadius": 2,
+      "dependents": [
+        "demo/server.js",
+        "pipeline/test.js"
+      ],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 13,
+      "rank": 3
+    },
+    {
+      "file": "pipeline/parser.js",
+      "findings": [
+        {
+          "file": "pipeline/parser.js",
+          "id": "PR1",
+          "severity": "medium",
+          "issue": "findLargestAmountInBottom crashes on empty blocks array",
+          "description": "Math.max(...blocks.map(b => b.y)) returns -Infinity when blocks is an empty array, and subsequent filter/loop operations produce incorrect results. No guard exists at the call site in findTotal.",
+          "fix": "Add a guard at the top of findLargestAmountInBottom: if (!blocks || blocks.length === 0) return null;",
+          "line": 488
+        },
+        {
+          "file": "pipeline/parser.js",
+          "id": "PR2",
+          "severity": "medium",
+          "issue": "\"total\" duplicated across tier1 and tier2 keyword lists",
+          "description": "The string \"total\" appears in both KEYWORDS.tier1 (for French receipts) and KEYWORDS.tier2. The tier-1 check runs first so tier-2 is shadowed in practice, but the duplication is a maintenance hazard — future blacklist edits may not apply uniformly.",
+          "fix": "Remove \"total\" from KEYWORDS.tier2 since it is already covered by tier1.",
+          "line": 40
+        },
+        {
+          "file": "pipeline/parser.js",
+          "id": "PR3",
+          "severity": "low",
+          "issue": "Duplicated comment blocks",
+          "description": "The findTotal function header comment is copy-pasted three times (lines 281, 289, 297) and the extractNumber step-3 label is duplicated on consecutive lines (158-159), adding noise without information.",
+          "fix": "Consolidate to a single doc comment per function.",
+          "line": 281
+        },
+        {
+          "file": "pipeline/parser.js",
+          "id": "PR4",
+          "severity": "low",
+          "issue": "Adjacent-row lookahead uses 16 copy-pasted lines",
+          "description": "The rowsToCheck array manually enumerates rows[rowIndex+1] through rows[rowIndex+8] and rows[rowIndex-1] through rows[rowIndex-8] as eight individual copy-pasted expressions each, making the lookahead window hard to change.",
+          "fix": "Replace with a loop: const WINDOW = 8; const rowsToCheck = Array.from({length: WINDOW*2+1}, (_,k) => rows[rowIndex + k - WINDOW]).filter(Boolean);",
+          "line": 330
+        }
+      ],
+      "findingCount": 4,
+      "findingWeight": 6,
+      "blastRadius": 2,
+      "dependents": [
+        "demo/server.js",
+        "pipeline/test.js"
+      ],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 10,
+      "rank": 4
+    },
+    {
+      "file": "ml/receipt-detector-dataset.js",
+      "findings": [
+        {
+          "file": "ml/receipt-detector-dataset.js",
+          "id": "D1",
+          "severity": "high",
+          "issue": "fs.readdirSync throws if not-receipt/ directory is missing",
+          "description": "The not-receipt/ directory is never created by the project and is not in version control. First-time users get an unhandled ENOENT crash with no explanation.",
+          "fix": "Check existence before scanning: if (!fs.existsSync(NON_RECEIPT_DIR)) { console.warn('not-receipt/ directory not found — skipping negative examples'); } else { /* scan */ }",
+          "line": 55
+        },
+        {
+          "file": "ml/receipt-detector-dataset.js",
+          "id": "D2",
+          "severity": "medium",
+          "issue": "main() executes unconditionally on require",
+          "description": "main() is called at module load time. When receipt-detector-dataset.js is required by train-receipt-detector.js, generateDataset() runs twice — once via main() and once explicitly — wasting time and producing duplicate console output.",
+          "fix": "Gate the call with if (require.main === module) main();",
+          "line": 149
+        }
+      ],
+      "findingCount": 2,
+      "findingWeight": 5,
+      "blastRadius": 2,
+      "dependents": [
+        "ml/test-receipt-detector-tensors.js",
+        "ml/train-receipt-detector.js"
+      ],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 9,
+      "rank": 5
+    },
+    {
+      "file": "pipeline/ocr_engine.py",
+      "findings": [
+        {
+          "file": "pipeline/ocr_engine.py",
+          "id": "P1",
+          "severity": "high",
+          "issue": "No file-existence check before readtext",
+          "description": "If the image path passed as a CLI argument does not exist, EasyOCR raises an unhandled Python exception, exiting non-zero. Node.js receives only a raw traceback in stderr with no structured error.",
+          "fix": "Add an existence check: if not os.path.exists(image_path): print(json.dumps({'error': 'file not found'}), file=sys.stderr); sys.exit(1).",
+          "line": 38
+        },
+        {
+          "file": "pipeline/ocr_engine.py",
+          "id": "P2",
+          "severity": "medium",
+          "issue": "easyocr.Reader re-instantiated per request",
+          "description": "A new Reader instance (including weight loading) is created for every image. This adds significant latency on each call and prevents model caching across requests.",
+          "fix": "Move the Reader to module level with lazy initialisation (e.g. a global _reader variable), or implement a long-lived worker process that accepts image paths on stdin.",
+          "line": 7
+        },
+        {
+          "file": "pipeline/ocr_engine.py",
+          "id": "P3",
+          "severity": "low",
+          "issue": "No error wrapper around reader.readtext",
+          "description": "If EasyOCR raises an exception (corrupt image, out of memory, etc.), the process exits without printing valid JSON, causing the Node.js JSON.parse to fail with a confusing error.",
+          "fix": "Wrap the readtext call in try/except Exception as e: print(json.dumps({'error': str(e)})); sys.exit(1) so the Node.js side always receives parseable output.",
+          "line": 10
+        }
+      ],
+      "findingCount": 3,
+      "findingWeight": 6,
+      "blastRadius": 1,
+      "dependents": [
+        "pipeline/ocr.js"
+      ],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 8,
+      "rank": 6
+    },
+    {
+      "file": "lib/image-decode.js",
+      "findings": [
+        {
+          "file": "lib/image-decode.js",
+          "id": "L1",
+          "severity": "medium",
+          "issue": "WebP format not supported despite being present in dataset",
+          "description": "decodeImage throws 'Unsupported image format: .webp' for WebP files. The llm-images/ directory contains 35.webp and the dataset scanner explicitly lists 'webp' as an accepted extension, creating a silent data gap during training.",
+          "fix": "Add WebP decoding via the sharp package (sharp(buffer).toFormat('png').toBuffer()), or convert WebP files to JPEG at upload/ingest time before calling decodeImage.",
+          "line": 8
+        },
+        {
+          "file": "lib/image-decode.js",
+          "id": "L2",
+          "severity": "low",
+          "issue": "Extension detection via split('.').pop() is fragile",
+          "description": "For a file named 'no-extension', split('.').pop() returns the full filename rather than an empty string, causing an incorrect format check instead of a clear unsupported-format error.",
+          "fix": "Use path.extname(imagePath).slice(1).toLowerCase() which correctly returns an empty string for extension-less files.",
+          "line": 9
+        }
+      ],
+      "findingCount": 2,
+      "findingWeight": 3,
+      "blastRadius": 2,
+      "dependents": [
+        "ml/image-utils.js",
+        "pipeline/ocr.js"
+      ],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 7,
+      "rank": 7
+    },
+    {
+      "file": "pipeline/test.js",
+      "findings": [
+        {
+          "file": "pipeline/test.js",
+          "id": "T1",
+          "severity": "high",
+          "issue": "Label file read synchronously at module load with no error handling",
+          "description": "JSON.parse(fs.readFileSync(LABELS_PATH, 'utf8')) at the top level will throw and crash the process with an opaque error if receipt_labels.json is missing or malformed.",
+          "fix": "Wrap in a try/catch block or check fs.existsSync first, then emit a clear human-readable error message before exiting.",
+          "line": 8
+        },
+        {
+          "file": "pipeline/test.js",
+          "id": "T2",
+          "severity": "medium",
+          "issue": "Division by zero when no images are processed",
+          "description": "If all label entries are skipped (e.g. no images found on disk), total remains 0 and (correct / total) * 100 produces NaN, silently corrupting the summary output.",
+          "fix": "Guard the percentage calculations: total > 0 ? ((correct / total) * 100).toFixed(1) : 'N/A'.",
+          "line": 64
+        },
+        {
+          "file": "pipeline/test.js",
+          "id": "T3",
+          "severity": "medium",
+          "issue": "No automated unit tests for parser logic",
+          "description": "The only test file is an end-to-end accuracy script with no assertion framework and no CI hook. Core functions like extractNumber, getKeywordTier, and groupIntoRows have zero unit test coverage. A regex change can silently regress with no test failure.",
+          "fix": "Add unit tests using node:test or Jest covering at least extractNumber (edge-case inputs are already documented in comments) and getKeywordTier, with assertions that fail on regression.",
+          "line": 1
+        }
+      ],
+      "findingCount": 3,
+      "findingWeight": 7,
+      "blastRadius": 0,
+      "dependents": [],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 7,
+      "rank": 8
+    },
+    {
+      "file": "ml/train-receipt-detector.js",
+      "findings": [
+        {
+          "file": "ml/train-receipt-detector.js",
+          "id": "TR1",
+          "severity": "high",
+          "issue": "model.json written twice, first write is dead code",
+          "description": "Inside the withSaveHandler callback, model.json is written first with only modelTopology, then immediately overwritten with the full manifest. The first write is wasted I/O and dead code that obscures the save logic.",
+          "fix": "Remove the first fs.writeFileSync call for model.json (lines 244-247) and keep only the second, complete write that includes the weightsManifest.",
+          "line": 244
+        },
+        {
+          "file": "ml/train-receipt-detector.js",
+          "id": "TR2",
+          "severity": "medium",
+          "issue": "xs and ys arrays can become mismatched in length",
+          "description": "In prepareData, if imageToTensor throws for some examples, xs gets fewer entries than ys would if ys were pushed outside the try block. The current code pushes both inside the try, but this should be explicitly verified — a shape mismatch between xsTensor and ysTensor causes a silent training error.",
+          "fix": "Verify both pushes (xs.push and ys.push) remain inside the same try block so they always stay in sync, and add a post-loop assertion: if (xs.length !== ys.length) throw new Error('xs/ys length mismatch');",
+          "line": 34
+        },
+        {
+          "file": "ml/train-receipt-detector.js",
+          "id": "TR3",
+          "severity": "low",
+          "issue": "train() executes unconditionally on require",
+          "description": "train().catch(console.error) runs at module load, making the file untestable as a module. Any future import of a helper from this file will trigger a full training run.",
+          "fix": "Wrap with if (require.main === module) train().catch(console.error);",
+          "line": 281
+        }
+      ],
+      "findingCount": 3,
+      "findingWeight": 6,
+      "blastRadius": 0,
+      "dependents": [],
+      "exposureScore": 0,
+      "exposureReasons": [],
+      "riskScore": 6,
+      "rank": 9
+    }
+  ]
+}
