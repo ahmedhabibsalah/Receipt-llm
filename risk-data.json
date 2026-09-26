@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26T18:39:39.392Z",
+  "generatedAt": "2026-09-26T18:41:45.217Z",
   "scoring": {
     "findingWeight": "high=3, medium=2, low=1, summed per file",
     "blastRadius": "count of files that import this one, x2",
@@ -215,7 +215,12 @@
           "issue": "findLargestAmountInBottom crashes on empty blocks array",
           "description": "Math.max(...blocks.map(b => b.y)) returns -Infinity when blocks is an empty array, and subsequent filter/loop operations produce incorrect results. No guard exists at the call site in findTotal.",
           "fix": "Add a guard at the top of findLargestAmountInBottom: if (!blocks || blocks.length === 0) return null;",
-          "line": 488
+          "line": 488,
+          "patch": {
+            "before": "function findLargestAmountInBottom(blocks) {\n  const maxY = Math.max(...blocks.map((b) => b.y));\n  const bottomThreshold = maxY * 0.7;",
+            "after": "function findLargestAmountInBottom(blocks) {\n  if (!blocks || blocks.length === 0) return null;\n\n  const maxY = Math.max(...blocks.map((b) => b.y));\n  const bottomThreshold = maxY * 0.7;",
+            "generatedByBob": true
+          }
         },
         {
           "file": "pipeline/parser.js",
@@ -224,7 +229,12 @@
           "issue": "\"total\" duplicated across tier1 and tier2 keyword lists",
           "description": "The string \"total\" appears in both KEYWORDS.tier1 (for French receipts) and KEYWORDS.tier2. The tier-1 check runs first so tier-2 is shadowed in practice, but the duplication is a maintenance hazard — future blacklist edits may not apply uniformly.",
           "fix": "Remove \"total\" from KEYWORDS.tier2 since it is already covered by tier1.",
-          "line": 40
+          "line": 40,
+          "patch": {
+            "before": "  // tier 2 — likely total but need context\n  // \"total\" alone can be a column header so we validate by position\n  tier2: [\n    \"total\",\n    \"amount\",\n    \"المبلغ\",\n    \"يجب دفعه\",\n    \"total due\", // duplicate coverage\n\n    \"usd\",\n    \"egp\",\n    \"eur\",\n    \"gbp\",\n  ],",
+            "after": "  // tier 2 — likely total but need context\n  // \"total\" alone can be a column header so we validate by position\n  tier2: [\n    \"amount\",\n    \"المبلغ\",\n    \"يجب دفعه\",\n\n    \"usd\",\n    \"egp\",\n    \"eur\",\n    \"gbp\",\n  ],",
+            "generatedByBob": true
+          }
         },
         {
           "file": "pipeline/parser.js",

@@ -54,5 +54,19 @@
     "before": "  const encoded = jpeg.encode(\n    { data: Buffer.from(scaledData), width: scaledW, height: scaledH },\n    95,\n  );\n  const tempPath = path.join(__dirname, \"..\", \"temp_crop.jpg\");\n  fs.writeFileSync(tempPath, encoded.data);\n\n  return tempPath;",
     "after": "  const encoded = jpeg.encode(\n    { data: Buffer.from(scaledData), width: scaledW, height: scaledH },\n    95,\n  );\n  const tempPath = path.join(\n    __dirname,\n    \"..\",\n    `temp_crop_${crypto.randomUUID()}.jpg`,\n  );\n  fs.writeFileSync(tempPath, encoded.data);\n\n  return tempPath;",
     "generatedByBob": true
+  },
+  {
+    "file": "pipeline/parser.js",
+    "id": "PR1",
+    "before": "function findLargestAmountInBottom(blocks) {\n  const maxY = Math.max(...blocks.map((b) => b.y));\n  const bottomThreshold = maxY * 0.7;",
+    "after": "function findLargestAmountInBottom(blocks) {\n  if (!blocks || blocks.length === 0) return null;\n\n  const maxY = Math.max(...blocks.map((b) => b.y));\n  const bottomThreshold = maxY * 0.7;",
+    "generatedByBob": true
+  },
+  {
+    "file": "pipeline/parser.js",
+    "id": "PR2",
+    "before": "  // tier 2 — likely total but need context\n  // \"total\" alone can be a column header so we validate by position\n  tier2: [\n    \"total\",\n    \"amount\",\n    \"المبلغ\",\n    \"يجب دفعه\",\n    \"total due\", // duplicate coverage\n\n    \"usd\",\n    \"egp\",\n    \"eur\",\n    \"gbp\",\n  ],",
+    "after": "  // tier 2 — likely total but need context\n  // \"total\" alone can be a column header so we validate by position\n  tier2: [\n    \"amount\",\n    \"المبلغ\",\n    \"يجب دفعه\",\n\n    \"usd\",\n    \"egp\",\n    \"eur\",\n    \"gbp\",\n  ],",
+    "generatedByBob": true
   }
 ]
