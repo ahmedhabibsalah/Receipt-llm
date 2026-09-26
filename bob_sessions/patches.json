@@ -68,5 +68,19 @@
     "before": "  // tier 2 — likely total but need context\n  // \"total\" alone can be a column header so we validate by position\n  tier2: [\n    \"total\",\n    \"amount\",\n    \"المبلغ\",\n    \"يجب دفعه\",\n    \"total due\", // duplicate coverage\n\n    \"usd\",\n    \"egp\",\n    \"eur\",\n    \"gbp\",\n  ],",
     "after": "  // tier 2 — likely total but need context\n  // \"total\" alone can be a column header so we validate by position\n  tier2: [\n    \"amount\",\n    \"المبلغ\",\n    \"يجب دفعه\",\n\n    \"usd\",\n    \"egp\",\n    \"eur\",\n    \"gbp\",\n  ],",
     "generatedByBob": true
+  },
+  {
+    "file": "ml/receipt-detector-dataset.js",
+    "id": "D1",
+    "before": "  console.log(`\\nScanning non-receipt images...`);\n  const nonReceiptFiles = fs.readdirSync(NON_RECEIPT_DIR);\n\n  for (const file of nonReceiptFiles) {",
+    "after": "  console.log(`\\nScanning non-receipt images...`);\n  if (!fs.existsSync(NON_RECEIPT_DIR)) {\n    console.warn(`  ⚠ not-receipt/ directory not found at ${NON_RECEIPT_DIR} — skipping negative examples`);\n  } else {\n  const nonReceiptFiles = fs.readdirSync(NON_RECEIPT_DIR);\n\n  for (const file of nonReceiptFiles) {",
+    "generatedByBob": true
+  },
+  {
+    "file": "ml/receipt-detector-dataset.js",
+    "id": "D2",
+    "before": "main();\n\nmodule.exports = { generateDataset };",
+    "after": "if (require.main === module) main();\n\nmodule.exports = { generateDataset };",
+    "generatedByBob": true
   }
 ]

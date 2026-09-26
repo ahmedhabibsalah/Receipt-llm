@@ -253,7 +253,12 @@
     "issue": "fs.readdirSync throws if not-receipt/ directory is missing",
     "description": "The not-receipt/ directory is never created by the project and is not in version control. First-time users get an unhandled ENOENT crash with no explanation.",
     "fix": "Check existence before scanning: if (!fs.existsSync(NON_RECEIPT_DIR)) { console.warn('not-receipt/ directory not found — skipping negative examples'); } else { /* scan */ }",
-    "line": 55
+    "line": 55,
+    "patch": {
+      "before": "  console.log(`\\nScanning non-receipt images...`);\n  const nonReceiptFiles = fs.readdirSync(NON_RECEIPT_DIR);\n\n  for (const file of nonReceiptFiles) {",
+      "after": "  console.log(`\\nScanning non-receipt images...`);\n  if (!fs.existsSync(NON_RECEIPT_DIR)) {\n    console.warn(`  ⚠ not-receipt/ directory not found at ${NON_RECEIPT_DIR} — skipping negative examples`);\n  } else {\n  const nonReceiptFiles = fs.readdirSync(NON_RECEIPT_DIR);\n\n  for (const file of nonReceiptFiles) {",
+      "generatedByBob": true
+    }
   },
   {
     "file": "ml/receipt-detector-dataset.js",
@@ -262,7 +267,12 @@
     "issue": "main() executes unconditionally on require",
     "description": "main() is called at module load time. When receipt-detector-dataset.js is required by train-receipt-detector.js, generateDataset() runs twice — once via main() and once explicitly — wasting time and producing duplicate console output.",
     "fix": "Gate the call with if (require.main === module) main();",
-    "line": 149
+    "line": 149,
+    "patch": {
+      "before": "main();\n\nmodule.exports = { generateDataset };",
+      "after": "if (require.main === module) main();\n\nmodule.exports = { generateDataset };",
+      "generatedByBob": true
+    }
   },
   {
     "file": "ml/train-receipt-detector.js",
